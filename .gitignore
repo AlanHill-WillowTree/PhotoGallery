@@ -1,0 +1,21 @@
+.gradle
+/local.properties
+/.idea/workspace.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+
+# Android
+/**/gen/*
+out/*
+classes/*
+libs/*
+
+# IntelliJ
+*.iml
+*.ipr
+*.iws
+*.eml
+.idea/*
+!.idea/runConfigurations
