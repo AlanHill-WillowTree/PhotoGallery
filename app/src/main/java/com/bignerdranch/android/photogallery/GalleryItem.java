@@ -9,4 +9,28 @@ public class GalleryItem {
     public String toString() {
         return caption;
     }
+
+    public void setCaption(String caption) {
+        this.caption = caption;
+    }
+
+    public String getCaption() {
+        return this.caption;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String id() {
+        return this.id;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getUrl() {
+        return this.url;
+    }
 }
