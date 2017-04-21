@@ -19,6 +19,10 @@ public class PhotoGalleryFragment extends Fragment{
 
     private RecyclerView photoRecyclerView;
     private List<GalleryItem> galleryItems = new ArrayList<>();
+    private PhotoAdapter adapter;
+    private GridLayoutManager layoutManager;
+    private int currentPage = 1;
+    private boolean isLoading = false;
 
     public static PhotoGalleryFragment newInstance() {
         return new PhotoGalleryFragment();
@@ -28,7 +32,7 @@ public class PhotoGalleryFragment extends Fragment{
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-        new FetchItemsTask().execute();
+        new FetchItemsTask().execute(currentPage);
     }
 
     @Override
@@ -36,27 +40,51 @@ public class PhotoGalleryFragment extends Fragment{
         View v = inflater.inflate(R.layout.fragment_photo_gallery, container, false);
 
         photoRecyclerView = (RecyclerView) v.findViewById(R.id.fragment_photo_gallery_recycler_view);
-        photoRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
+        layoutManager = new GridLayoutManager(getActivity(), 3);
+        photoRecyclerView.setLayoutManager(layoutManager);
+        photoRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                int visibleItemCount = layoutManager.getChildCount();
+                int totalItemCount = layoutManager.getItemCount();
+                int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
+
+                if (!isLoading &&
+                        (visibleItemCount + firstVisibleItemPosition) >= totalItemCount
+                        && firstVisibleItemPosition >= 0) {
+                    new FetchItemsTask().execute(++currentPage);
+                }
+            }
+        });
         setupAdapter();
         return v;
     }
 
     private void setupAdapter() {
         if (isAdded()) {
-            photoRecyclerView.setAdapter(new PhotoAdapter(galleryItems));
+            adapter = new PhotoAdapter(galleryItems);
+            photoRecyclerView.setAdapter(adapter);
         }
     }
 
-    private class FetchItemsTask extends AsyncTask<Void, Void, List<GalleryItem>> {
+    private class FetchItemsTask extends AsyncTask<Integer, Void, List<GalleryItem>> {
         @Override
-        protected List<GalleryItem> doInBackground(Void... params) {
-            return new FlickrFetchr().fetchItems();
+        protected List<GalleryItem> doInBackground(Integer... params) {
+            isLoading = true;
+            return new FlickrFetchr().fetchItems(params[0]);
         }
 
         @Override
         protected void onPostExecute(List<GalleryItem> items) {
-            galleryItems = items;
-            setupAdapter();
+            isLoading = false;
+            galleryItems.addAll(items);
+            if (adapter == null) {
+                setupAdapter();
+            } else {
+                adapter.addItems(items);
+                adapter.notifyDataSetChanged();
+            }
         }
     }
 
@@ -78,6 +106,10 @@ public class PhotoGalleryFragment extends Fragment{
 
         public PhotoAdapter(List<GalleryItem> galleryItems) {
             this.galleryItems = galleryItems;
+        }
+
+        public void addItems(List<GalleryItem> galleryItems) {
+            this.galleryItems.addAll(galleryItems);
         }
 
         @Override
